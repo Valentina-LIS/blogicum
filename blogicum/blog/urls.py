@@ -13,4 +13,6 @@ urlpatterns = [
          name='edit_profile'),
     path('profile/<slug:username>/', views.ProfileListView.as_view(),
          name='profile'),
+    path('posts/create/', views.PostCreateView.as_view(),
+         name='create_post'),
 ]

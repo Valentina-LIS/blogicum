@@ -4,7 +4,7 @@ from django.shortcuts import get_object_or_404, render
 
 from django.http import Http404
 
-from django.views.generic import ListView, UpdateView
+from django.views.generic import ListView, UpdateView, CreateView
 
 from django.contrib.auth.mixins import LoginRequiredMixin
 
@@ -15,6 +15,8 @@ from django.core.paginator import Paginator
 from django.urls import reverse, reverse_lazy
 
 from .models import Category, Post
+from .forms import PostForm
+
 
 PAGINATOR_VALUE: int = 10
 PAGE_NUMBER = "page"
@@ -99,3 +101,17 @@ class ProfileUpdateView(LoginRequiredMixin, UpdateView):
     def get_success_url(self):
         return reverse('blog:profile', kwargs={
             'username': self.request.user.username})
+
+
+class PostCreateView(LoginRequiredMixin, CreateView):
+    model = Post
+    form_class = PostForm
+    template_name = "blog/create.html"
+
+    def get_success_url(self):
+        return reverse('blog:profile', kwargs={
+            'username': self.request.user.username})
+
+    def form_valid(self, form):
+        form.instance.author = self.request.user
+        return super().form_valid(form)
