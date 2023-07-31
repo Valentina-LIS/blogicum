@@ -10,11 +10,14 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 
 from django.contrib.auth.models import User
 
+from django.core.paginator import Paginator
+
 from django.urls import reverse, reverse_lazy
 
 from .models import Category, Post
 
-NUM_SORT: int = 5
+PAGINATOR_VALUE: int = 10
+PAGE_NUMBER = "page"
 
 
 def post_queryset(category_is_published: bool = True):
@@ -27,8 +30,11 @@ def post_queryset(category_is_published: bool = True):
 
 def index(request):
     template = 'blog/index.html'
-    post_list = post_queryset()[:NUM_SORT]
-    context = {'post_list': post_list}
+    post_list = post_queryset()
+    paginator = Paginator(post_list, PAGINATOR_VALUE)
+    page_number = request.GET.get(PAGE_NUMBER)
+    page_obj = paginator.get_page(page_number)
+    context = {'page_obj': page_obj}
     return render(request, template, context)
 
 
@@ -49,8 +55,11 @@ def category_posts(request, category_slug):
                                  slug=category_slug,
                                  is_published=True)
     category_list = post_queryset().filter(category__slug=category_slug)
+    paginator = Paginator(category_list, PAGINATOR_VALUE)
+    page_number = request.GET.get(PAGE_NUMBER)
+    page_obj = paginator.get_page(page_number)
     context = {'category': category,
-               'post_list': category_list}
+               'page_obj': page_obj}
     return render(request, template, context)
 
 
