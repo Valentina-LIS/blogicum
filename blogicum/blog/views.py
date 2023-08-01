@@ -5,7 +5,7 @@ from django.shortcuts import get_object_or_404, render, redirect
 from django.http import Http404
 
 from django.views.generic import (
-    ListView, UpdateView, CreateView
+    ListView, UpdateView, CreateView, DeleteView
 )
 
 from django.contrib.auth.mixins import LoginRequiredMixin
@@ -138,3 +138,9 @@ class PostUpdateView(LoginRequiredMixin, UpdateView):
     def form_valid(self, form):
         form.instance.author = self.request.user
         return super().form_valid(form)
+
+
+class PostDeleteView(LoginRequiredMixin, DeleteView):
+    model = Post
+    template_name = 'blog/create.html'
+    success_url = reverse_lazy('blog:index')
