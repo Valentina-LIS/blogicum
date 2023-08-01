@@ -8,5 +8,10 @@
       <small>От автора @{{ post.author.username }} в категории {% include "includes/category_link.html" %}</small></p>
     <h3>{{ post.title }}</h3>
     <p>{{ post.text|linebreaksbr }}</p>
+    <div class="mb-2">
+      <a class="btn btn-sm text-muted" href="{% url 'blog:edit_post' post.id %}" role="button">
+        Отредактировать публикацию
+      </a>
+    </div>
   </article> 
 {% endblock %}

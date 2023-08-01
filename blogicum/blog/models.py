@@ -79,6 +79,11 @@ class Post(BaseModel):
         default=100,
         verbose_name='Порядок отображения'
     )
+    image = models.ImageField(
+        verbose_name='Фото',
+        upload_to='posts_images',
+        blank=True
+    )
 
     class Meta:
         verbose_name = 'публикация'

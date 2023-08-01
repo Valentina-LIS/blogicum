@@ -1,10 +1,12 @@
 import datetime
 
-from django.shortcuts import get_object_or_404, render
+from django.shortcuts import get_object_or_404, render, redirect
 
 from django.http import Http404
 
-from django.views.generic import ListView, UpdateView, CreateView
+from django.views.generic import (
+    ListView, UpdateView, CreateView
+)
 
 from django.contrib.auth.mixins import LoginRequiredMixin
 
@@ -111,6 +113,27 @@ class PostCreateView(LoginRequiredMixin, CreateView):
     def get_success_url(self):
         return reverse('blog:profile', kwargs={
             'username': self.request.user.username})
+
+    def form_valid(self, form):
+        form.instance.author = self.request.user
+        return super().form_valid(form)
+
+
+class PostUpdateView(LoginRequiredMixin, UpdateView):
+    model = Post
+    template_name = 'blog/create.html'
+    form_class = PostForm
+    success_url = reverse_lazy('blog:post_detail')
+
+    def dispatch(self, request, *args, **kwargs):
+        post = get_object_or_404(Post, pk=kwargs['pk'])
+        if post.author != request.user:
+            return redirect('blog:post_detail', pk=self.kwargs['pk'])
+        return super().dispatch(request, *args, **kwargs)
+
+    def get_success_url(self):
+        return reverse('blog:post_detail', kwargs={
+            'id': self.kwargs['pk']})
 
     def form_valid(self, form):
         form.instance.author = self.request.user
