@@ -39,7 +39,7 @@ def post_queryset(category_is_published: bool = True):
 @login_required
 def index(request):
     template = 'blog/index.html'
-    post_list = post_queryset().annotate(comment_count=Count("comments"))
+    post_list = post_queryset().annotate(comment_count=Count('comments'))
     paginator = Paginator(post_list, PAGINATOR_VALUE)
     page_number = request.GET.get(PAGE_NUMBER)
     page_obj = paginator.get_page(page_number)
@@ -100,7 +100,7 @@ class ProfileListView(LoginRequiredMixin, ListView):
             raise Http404
         return Post.objects.filter(author=profile
                                    ).order_by('-pub_date').annotate(
-                                    comment_count=Count("comments"))
+                                    comment_count=Count('comments'))
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
