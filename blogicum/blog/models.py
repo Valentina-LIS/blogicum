@@ -17,10 +17,6 @@ class Category(BaseModel):
                   'разрешены символы латиницы, цифры, '
                   'дефис и подчёркивание.'
     )
-    output_order = models.PositiveSmallIntegerField(
-        default=100,
-        verbose_name='Порядок отображения'
-    )
 
     class Meta:
         verbose_name = 'категория'
@@ -74,10 +70,6 @@ class Post(BaseModel):
         blank=False,
         related_name='posts',
         verbose_name='Категория'
-    )
-    output_order = models.PositiveSmallIntegerField(
-        default=100,
-        verbose_name='Порядок отображения'
     )
     image = models.ImageField(
         verbose_name='Фото',
