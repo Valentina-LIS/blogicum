@@ -1,6 +1,8 @@
+import datetime
+
 from django.contrib.auth.decorators import login_required
 
-from django.shortcuts import get_object_or_404, redirect
+from django.shortcuts import get_object_or_404, redirect, render
 
 from django.http import Http404, HttpResponse
 
@@ -12,7 +14,9 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 
 from django.contrib.auth.models import User
 
-from django.db.models import Count
+from django.db.models import Count, Prefetch
+
+from django.core.paginator import Paginator
 
 from django.urls import reverse, reverse_lazy
 
@@ -20,6 +24,18 @@ from django.utils import timezone
 
 from .models import Category, Post, Comment
 from .forms import PostForm, CommentForm
+
+
+PAGINATOR_VALUE: int = 10
+PAGE_NUMBER = "page"
+
+
+def post_queryset(category_is_published: bool = True):
+    return Post.objects.filter(
+        is_published=True,
+        pub_date__date__lt=datetime.datetime.now(),
+        category__is_published=category_is_published
+    ).order_by('-pub_date')
 
 
 @login_required
@@ -62,32 +78,26 @@ class PostDetailView(DetailView):
         return context
 
 
-class CategoryPostsListView(ListView):
-    model = Post
-    template_name = 'blog/category.html'
-    paginate_by = 10
-
-    def get_queryset(self):
-        category_post = get_object_or_404(
-            Category,
-            slug=self.kwargs['category_slug'],
-            is_published=True
-        )
-        self.category = (
-            self.model.objects.select_related(
-                'location', 'author', 'category').filter(
-                    category=category_post,
-                    is_published=True,
-                    pub_date__lte=timezone.now()).annotate(
-                    comment_count=Count("comments")
-            ).order_by("-pub_date")
-        )
-        return self.category
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context['category'] = self.category
-        return context
+@login_required
+def category_posts(request, category_slug):
+    template = 'blog/category.html'
+    category = get_object_or_404(
+        Category.objects.prefetch_related(
+            Prefetch(
+                'posts',
+                post_queryset()
+                .annotate(comment_count=Count('comments')),
+            )
+        ).filter(slug=category_slug),
+        is_published=True,
+    )
+    category_list = category.posts.all().filter(category__slug=category_slug)
+    paginator = Paginator(category_list, PAGINATOR_VALUE)
+    page_number = request.GET.get(PAGE_NUMBER)
+    page_obj = paginator.get_page(page_number)
+    context = {'category': category,
+               'page_obj': page_obj}
+    return render(request, template, context)
 
 
 class ProfileListView(LoginRequiredMixin, ListView):
