@@ -23,7 +23,7 @@ from django.urls import reverse, reverse_lazy
 from django.utils import timezone
 
 from .models import Category, Post, Comment
-from .forms import PostForm, CommentForm
+from .forms import PostForm, CommentForm, UserForm
 
 
 PAGINATOR_VALUE: int = 10
@@ -100,49 +100,42 @@ def category_posts(request, category_slug):
     return render(request, template, context)
 
 
-class ProfileListView(LoginRequiredMixin, ListView):
-    model = Post
-    template_name = 'blog/profile.html'
-    ordering = 'id'
-    paginate_by = 10
+def profile_detail(request, username):
+    template = 'blog/profile.html'
+    profile = get_object_or_404(User, username=username)
+    posts = Post.objects.all().annotate(
+        comment_count=Count('comments')
+    ).filter(
+        author__username=username,
+    ).order_by('-pub_date')
 
-    def dispatch(self, request, *args, **kwargs):
-        return super().dispatch(request, *args, **kwargs)
+    if not (
+            request.user.is_authenticated
+            and request.user.username == username
+    ):
+        posts = posts.filter(is_published=True, pub_date__lte=timezone.now())
 
-    def get_queryset(self):
-        username = self.kwargs['username']
-        try:
-            profile = User.objects.get(username=username)
-        except User.DoesNotExist:
-            raise Http404
-        return Post.objects.filter(author=profile
-                                   ).order_by('-pub_date').annotate(
-                                    comment_count=Count('comments'))
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context['profile'] = User.objects.get(username=self.kwargs['username'])
-        return context
+    paginator = Paginator(posts, PAGINATOR_VALUE)
+    page_number = request.GET.get(PAGE_NUMBER)
+    page_obj = paginator.get_page(page_number)
+    context = {'profile': profile,
+               'page_obj': page_obj}
+    return render(request, template, context)
 
 
-class ProfileUpdateView(LoginRequiredMixin, UpdateView):
-    model = User
-    template_name = 'blog/user.html'
-    fields = ['first_name', 'last_name', 'username', 'email']
-    success_url = reverse_lazy('blog:profile')
-
-    def get_object(self, queryset=None):
-        return self.request.user
-
-    def get_success_url(self):
-        return reverse('blog:profile', kwargs={
-            'username': self.request.user.username})
+@login_required
+def edit_profile(request):
+    form = UserForm(request.POST or None, instance=request.user)
+    if form.is_valid():
+        form.save()
+        return redirect('blog:profile', username=request.POST.get('username'))
+    return render(request, 'blog/user.html', {'form': form})
 
 
 class PostCreateView(LoginRequiredMixin, CreateView):
     model = Post
     form_class = PostForm
-    template_name = "blog/create.html"
+    template_name = 'blog/create.html'
 
     def get_success_url(self):
         return reverse('blog:profile', kwargs={
