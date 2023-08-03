@@ -61,9 +61,9 @@ class PostDetailView(DetailView):
 
     def dispatch(self, request, *args, **kwargs):
         post = self.get_object()
-        if (post.author != request.user and
-            (not post.is_published or not post.category.is_published or
-             post.pub_date > timezone.now())):
+        if (post.author != request.user
+            and (not post.is_published or not post.category.is_published
+                 or post.pub_date > timezone.now())):
             raise Http404
         else:
             return super().dispatch(request, *args, **kwargs)
