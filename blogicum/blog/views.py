@@ -43,6 +43,17 @@ def simple_view(request):
     return HttpResponse('Страница для залогиненных пользователей!')
 
 
+def get_page_context(queryset, request):
+    paginator = Paginator(queryset, PAGINATOR_VALUE)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    return {
+        'paginator': paginator,
+        'page_number': page_number,
+        'page_obj': page_obj,
+    }
+
+
 class PostListView(ListView):
     model = Post
     template_name = 'blog/index.html'
@@ -91,12 +102,12 @@ def category_posts(request, category_slug):
         ).filter(slug=category_slug),
         is_published=True,
     )
-    category_list = category.posts.all().filter(category__slug=category_slug)
-    paginator = Paginator(category_list, PAGINATOR_VALUE)
-    page_number = request.GET.get(PAGE_NUMBER)
-    page_obj = paginator.get_page(page_number)
-    context = {'category': category,
-               'page_obj': page_obj}
+    context = {
+        'category': category,
+    }
+    context.update(get_page_context(category.posts.all().filter(
+                                    category__slug=category_slug), request
+                                    ))
     return render(request, template, context)
 
 
