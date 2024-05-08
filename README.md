@@ -6,7 +6,7 @@
 
 <details>
   <summary>Нажмите, чтобы развернуть</summary>
-  <img src="./blogicum/static_dev/img/blogicum.jpg" alt="Изображение">
+  <img src="./blogicum/static_dev/img/blogicum.JPG" alt="Изображение">
 </details>
 
 ***
